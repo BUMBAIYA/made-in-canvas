@@ -1,6 +1,6 @@
 ---
+import { GamePage } from "@/games/2048/components/GamePage";
 import "@/styles/global.css";
-import { Counter } from "@/test/Counter";
 ---
 
 <!doctype html>
@@ -16,10 +16,7 @@ import { Counter } from "@/test/Counter";
       content="Mini games made using HTML canvas and javascript"
     />
   </head>
-  <body class="min-h-dvh">
-    <main class="space-y-4 p-3">
-      <h1 class="text-5xl font-semibold">Canvas Games</h1>
-      <Counter client:only="solid" />
-    </main>
+  <body class="bg-background text-accent flex min-h-dvh flex-col p-4">
+    <GamePage client:only="solid" />
   </body>
 </html>

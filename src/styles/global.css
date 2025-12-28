@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --color-accent: oklch(51.451% 0.03486 68.501);
+  --color-background: oklch(97.847% 0.01066 95.21);
+  --color-hover: oklch(89.062% 0.01375 78.17);
+}
+
 @layer base {
   html,
   body {
