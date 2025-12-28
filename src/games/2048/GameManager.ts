@@ -1,8 +1,18 @@
-const DEFAULT_CELL_COUNT = 4;
+const MIN_GRID_GUTTER_SIZE = 8;
+
+/**
+ * Base gutter percentage for 4x4 grid
+ */
+const DEFAULT_GUTTER_SIZE_PERCENTAGE = 2.5;
+const DEFAULT_BOARD_SIZE = 4;
 
 type RendererData = {
   width: number;
   height: number;
+  gridSize: number;
+  gridGutterSize: number;
+  gridCellSize: number;
+  boardBackgroundRadius: number;
 };
 
 export class GameManager {
@@ -13,11 +23,12 @@ export class GameManager {
   private boardSize: number;
   private colors = {
     background: "#9c8a7b",
+    cell: "#bdac97",
   };
 
   constructor(
     gameBoardContainer: HTMLDivElement,
-    cellCount: number = DEFAULT_CELL_COUNT,
+    cellCount: number = DEFAULT_BOARD_SIZE,
   ) {
     this.gameBoardContainer = gameBoardContainer;
     this.boardSize = cellCount;
@@ -35,6 +46,7 @@ export class GameManager {
 
   public render() {
     this.drawBoardBackground();
+    this.drawBoardBackgroundGrid();
   }
 
   private calculateCanvasDimensions() {
@@ -44,15 +56,56 @@ export class GameManager {
       containerRect.height,
     );
 
+    const cellCount = this.boardSize;
+
+    // Our multipler factor is (4 / cellcount) as we using base percentage for 4x4 grid.
+    const gutterPercentage = DEFAULT_GUTTER_SIZE_PERCENTAGE * (4 / cellCount);
+
+    const gutter = Math.max(
+      Math.floor((smallestContainerDimension / 100) * gutterPercentage),
+      MIN_GRID_GUTTER_SIZE,
+    );
+    const cellSize = Math.floor(
+      (smallestContainerDimension - gutter * (cellCount + 1)) / cellCount,
+    );
+
+    const size = cellSize * cellCount + gutter * (cellCount + 1);
+
     return {
-      width: smallestContainerDimension,
-      height: smallestContainerDimension,
+      height: size,
+      width: size,
+      gridSize: cellCount,
+      gridGutterSize: gutter,
+      gridCellSize: cellSize,
+      boardBackgroundRadius: Math.floor(gutter * 1.75), // found 1.75 to look good on all grid sizes
     };
+  }
+
+  private drawBoardBackgroundGrid(): void {
+    this.ctx.fillStyle = this.colors.cell;
+
+    const cellSize = this.rendererData.gridCellSize;
+    const padding = this.rendererData.gridGutterSize;
+    const gridSize = this.rendererData.gridSize;
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const x = padding + col * (cellSize + padding);
+        const y = padding + row * (cellSize + padding);
+        this.roundRect(x, y, cellSize, cellSize, padding);
+      }
+    }
   }
 
   private drawBoardBackground(): void {
     this.ctx.fillStyle = this.colors.background;
-    this.roundRect(0, 0, this.rendererData.width, this.rendererData.height, 16);
+    this.roundRect(
+      0,
+      0,
+      this.rendererData.width,
+      this.rendererData.height,
+      this.rendererData.boardBackgroundRadius,
+    );
   }
 
   /**
