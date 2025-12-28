@@ -1,5 +1,6 @@
 ---
 import "@/styles/global.css";
+import { Counter } from "@/test/Counter";
 ---
 
 <!doctype html>
@@ -16,8 +17,9 @@ import "@/styles/global.css";
     />
   </head>
   <body class="min-h-dvh">
-    <main class="p-3">
+    <main class="space-y-4 p-3">
       <h1 class="text-5xl font-semibold">Canvas Games</h1>
+      <Counter client:only="solid" />
     </main>
   </body>
 </html>
