@@ -15,10 +15,8 @@ echo ""
 
 # Format all staged files
 echo "Running Prettier..."
-PRETTIER_FILES=$(echo "$STAGED_FILES" | sed 's| |\\ |g')
-if [ -n "$PRETTIER_FILES" ]; then
-  echo "  Formatting files..."
-  prettier $PRETTIER_FILES --write --ignore-unknown
+if [ -n "$STAGED_FILES" ]; then
+  echo "$STAGED_FILES" | xargs pnpm exec prettier --write --ignore-unknown
   echo "  Prettier completed"
 else
   echo "  No files to format"
@@ -27,11 +25,11 @@ echo ""
 
 # lint only JS/TS files
 echo "Running ESLint..."
-ESLINT_FILES=$(echo "$STAGED_FILES" | grep -E '\.(js|ts|tsx)$' | sed 's| |\\ |g')
+ESLINT_FILES=$(echo "$STAGED_FILES" | grep -E '\.(js|ts|tsx)$')
 if [ -n "$ESLINT_FILES" ]; then
   echo "  Linting files:"
   echo "$ESLINT_FILES" | sed 's/^/    /'
-  eslint $ESLINT_FILES --fix
+  echo "$ESLINT_FILES" | xargs pnpm exec eslint --fix
   echo "  ESLint completed"
 else
   echo "  No JS/TS files to lint"
