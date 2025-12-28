@@ -37,10 +37,16 @@ export class GameManager {
     this.canvas.style.margin = "0 auto";
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     this.rendererData = this.calculateCanvasDimensions();
-    this.canvas.width = this.rendererData.width;
-    this.canvas.height = this.rendererData.height;
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#correcting_resolution_in_a_canvas
+    // We need set actual canvas size in memory and then scale down using css to maintain pixel perfect rendering
+    // to account for high resolution retina displays
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = this.rendererData.width * dpr;
+    this.canvas.height = this.rendererData.height * dpr;
     this.canvas.style.width = `${this.rendererData.width}px`;
     this.canvas.style.height = `${this.rendererData.height}px`;
+    this.ctx.scale(dpr, dpr); // Normalize coordinate system to use CSS pixels.
     this.gameBoardContainer.appendChild(this.canvas);
   }
 
