@@ -1,3 +1,5 @@
+import { randomNumberInRange } from "@/utils/randomNumberInRange";
+
 const MIN_GRID_GUTTER_SIZE = 8;
 
 /**
@@ -15,15 +17,38 @@ type RendererData = {
   boardBackgroundRadius: number;
 };
 
+type Colors = {
+  background: string;
+  cell: string;
+  text: string;
+  textLight: string;
+  tile: Record<number, string>;
+};
+
 export class GameManager {
   private gameBoardContainer: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private rendererData: RendererData;
   private boardSize: number;
-  private colors = {
+  private colors: Colors = {
     background: "#9c8a7b",
     cell: "#bdac97",
+    tile: {
+      2: "#eee5da",
+      4: "#ebd8b6",
+      8: "#f2b178",
+      16: "#f79461",
+      32: "#f78165",
+      64: "#f76443",
+      128: "#f1d068",
+      256: "#f3d261",
+      512: "#edc850",
+      1024: "#edc53f",
+      2048: "#edc22e",
+    },
+    text: "#776e65",
+    textLight: "#ffffff",
   };
 
   constructor(
@@ -53,6 +78,25 @@ export class GameManager {
   public render() {
     this.drawBoardBackground();
     this.drawBoardBackgroundGrid();
+
+    // Testing text rendering tile
+    const row = Math.floor(randomNumberInRange(0, this.boardSize));
+    const col = Math.floor(randomNumberInRange(0, this.boardSize));
+    this.drawTile(row, col, 2);
+    this.drawTile(col, row, 4);
+  }
+
+  public drawTile(row: number, col: number, value: number): void {
+    const padding = this.rendererData.gridGutterSize;
+    const cellSize = this.rendererData.gridCellSize;
+
+    const x = padding + col * cellSize + col * padding;
+    const y = padding + row * cellSize + row * padding;
+    const tileColor = this.colors.tile[value] || this.colors.tile[65536];
+    this.ctx.fillStyle = tileColor;
+
+    this.roundRect(x, y, cellSize, cellSize, padding);
+    this.drawTileText(value, x, y, cellSize);
   }
 
   private calculateCanvasDimensions() {
@@ -64,7 +108,7 @@ export class GameManager {
 
     const cellCount = this.boardSize;
 
-    // Our multipler factor is (4 / cellcount) as we using base percentage for 4x4 grid.
+    // Our multiplier factor is (4 / cellCount) as we using base percentage for 4x4 grid.
     const gutterPercentage = DEFAULT_GUTTER_SIZE_PERCENTAGE * (4 / cellCount);
 
     const gutter = Math.max(
@@ -114,14 +158,27 @@ export class GameManager {
     );
   }
 
-  /**
-   * Draws a rounded rectangle
-   * @param x - The x coordinate of the rectangle
-   * @param y - The y coordinate of the rectangle
-   * @param width - The width of the rectangle
-   * @param height - The height of the rectangle
-   * @param radius - The radius of the rounded corners
-   */
+  private drawTileText(
+    value: number,
+    x: number,
+    y: number,
+    cellSize: number,
+  ): void {
+    const text = value.toString();
+    const fontSize = cellSize / 2;
+
+    this.ctx.font = `bold ${fontSize}px Arial`;
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "alphabetic";
+
+    this.ctx.fillStyle = value <= 4 ? this.colors.text : this.colors.textLight;
+
+    const centerX = x + cellSize / 2;
+    const centerY = y + cellSize / 2 + fontSize * 0.38;
+
+    this.ctx.fillText(text, centerX, centerY);
+  }
+
   private roundRect(
     x: number,
     y: number,
