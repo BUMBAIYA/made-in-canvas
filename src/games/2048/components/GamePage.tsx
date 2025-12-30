@@ -1,4 +1,4 @@
-import { onMount } from "solid-js";
+import { onCleanup, onMount } from "solid-js";
 import { GameManager } from "@/games/2048/GameManager";
 
 export function GamePage() {
@@ -8,7 +8,12 @@ export function GamePage() {
   onMount(() => {
     gameManager = new GameManager(gameBoardContainer);
     gameManager.render();
+    gameManager.attachListeners();
     console.log(gameManager);
+
+    onCleanup(() => {
+      gameManager.cleanup();
+    });
   });
 
   return (

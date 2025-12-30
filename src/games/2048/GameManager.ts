@@ -63,19 +63,20 @@ export class GameManager {
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     this.rendererData = this.calculateCanvasDimensions();
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#correcting_resolution_in_a_canvas
-    // We need set actual canvas size in memory and then scale down using css to maintain pixel perfect rendering
-    // to account for high resolution retina displays
-    const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = this.rendererData.width * dpr;
-    this.canvas.height = this.rendererData.height * dpr;
-    this.canvas.style.width = `${this.rendererData.width}px`;
-    this.canvas.style.height = `${this.rendererData.height}px`;
-    this.ctx.scale(dpr, dpr); // Normalize coordinate system to use CSS pixels.
+    this.resizeCanvas();
     this.gameBoardContainer.appendChild(this.canvas);
   }
 
+  public attachListeners() {
+    window.addEventListener("resize", this.onWindowResize.bind(this));
+  }
+
+  public cleanup() {
+    window.removeEventListener("resize", this.onWindowResize.bind(this));
+  }
+
   public render() {
+    this.clearCanvas();
     this.drawBoardBackground();
     this.drawBoardBackgroundGrid();
 
@@ -86,7 +87,23 @@ export class GameManager {
     this.drawTile(col, row, 4);
   }
 
-  public drawTile(row: number, col: number, value: number): void {
+  private resizeCanvas() {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#correcting_resolution_in_a_canvas
+    // We need set actual canvas size in memory and then scale down using css to maintain pixel perfect rendering
+    // to account for high resolution retina displays
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = this.rendererData.width * dpr;
+    this.canvas.height = this.rendererData.height * dpr;
+    this.canvas.style.width = `${this.rendererData.width}px`;
+    this.canvas.style.height = `${this.rendererData.height}px`;
+    this.ctx.scale(dpr, dpr); // Normalize coordinate system to use CSS pixels.
+  }
+
+  private clearCanvas() {
+    this.ctx.clearRect(0, 0, this.rendererData.width, this.rendererData.height);
+  }
+
+  private drawTile(row: number, col: number, value: number): void {
     const padding = this.rendererData.gridGutterSize;
     const cellSize = this.rendererData.gridCellSize;
 
@@ -129,6 +146,21 @@ export class GameManager {
       gridCellSize: cellSize,
       boardBackgroundRadius: Math.floor(gutter * 1.75), // found 1.75 to look good on all grid sizes
     };
+  }
+
+  private onWindowResize(): void {
+    const _rendererData = this.calculateCanvasDimensions();
+
+    if (
+      this.rendererData.width === _rendererData.width &&
+      this.rendererData.height === _rendererData.height
+    ) {
+      return;
+    }
+
+    this.rendererData = _rendererData;
+    this.resizeCanvas();
+    this.render();
   }
 
   private drawBoardBackgroundGrid(): void {
