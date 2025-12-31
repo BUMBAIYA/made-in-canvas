@@ -64,6 +64,7 @@ export class GameManager {
     this.rendererData = this.calculateCanvasDimensions();
 
     this.resizeCanvas();
+    this.render();
     this.gameBoardContainer.appendChild(this.canvas);
   }
 
@@ -79,7 +80,10 @@ export class GameManager {
     this.clearCanvas();
     this.drawBoardBackground();
     this.drawBoardBackgroundGrid();
+  }
 
+  public startNewGame() {
+    this.render();
     // Testing text rendering tile
     const row = Math.floor(randomNumberInRange(0, this.boardSize));
     const col = Math.floor(randomNumberInRange(0, this.boardSize));

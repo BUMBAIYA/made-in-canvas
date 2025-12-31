@@ -11,4 +11,8 @@
   body {
     @apply h-full;
   }
+
+  button {
+    @apply focus:outline-none;
+  }
 }
