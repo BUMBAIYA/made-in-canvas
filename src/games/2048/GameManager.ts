@@ -84,11 +84,11 @@ export class GameManager {
     this.rendererData = this.calculateCanvasDimensions();
 
     this.resizeCanvas();
+    this.gameState = this.initGameState();
     this.render();
     this.gameBoardContainer.appendChild(this.canvas);
 
     this.attachListeners();
-    this.gameState = this.initGameState();
   }
 
   private initGameState() {
@@ -144,6 +144,7 @@ export class GameManager {
     this.clearCanvas();
     this.drawBoardBackground();
     this.drawBoardBackgroundGrid();
+    this.drawTiles();
   }
 
   public startNewGame() {
