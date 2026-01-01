@@ -35,6 +35,7 @@ export class GameManager {
     background: "#9c8a7b",
     cell: "#bdac97",
     tile: {
+      0: "#ff0000",
       2: "#eee5da",
       4: "#ebd8b6",
       8: "#f2b178",
@@ -113,7 +114,7 @@ export class GameManager {
 
     const x = padding + col * cellSize + col * padding;
     const y = padding + row * cellSize + row * padding;
-    const tileColor = this.colors.tile[value] || this.colors.tile[65536];
+    const tileColor = this.colors.tile[value] || this.colors.tile[0];
     this.ctx.fillStyle = tileColor;
 
     this.roundRect(x, y, cellSize, cellSize, padding);
