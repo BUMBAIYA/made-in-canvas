@@ -52,10 +52,13 @@ export class GameManager {
     textLight: "#ffffff",
   };
 
+  private inputManager: InputManager;
+
   constructor(
     gameBoardContainer: HTMLDivElement,
     cellCount: number = DEFAULT_BOARD_SIZE,
   ) {
+    this.inputManager = new InputManager();
     this.gameBoardContainer = gameBoardContainer;
     this.boardSize = cellCount;
     this.canvas = document.createElement("canvas");
@@ -67,13 +70,17 @@ export class GameManager {
     this.resizeCanvas();
     this.render();
     this.gameBoardContainer.appendChild(this.canvas);
+
+    this.attachListeners();
   }
 
-  public attachListeners() {
+  private attachListeners() {
+    this.inputManager.addListener(this.onUserInputEvent.bind(this));
     window.addEventListener("resize", this.onWindowResize.bind(this));
   }
 
   public cleanup() {
+    this.inputManager.cleanup();
     window.removeEventListener("resize", this.onWindowResize.bind(this));
   }
 
@@ -168,6 +175,10 @@ export class GameManager {
     this.render();
   }
 
+  private onUserInputEvent(event: InputEvent): void {
+    console.log("Input Event:", event);
+  }
+
   private drawBoardBackgroundGrid(): void {
     this.ctx.fillStyle = this.colors.cell;
 
@@ -240,5 +251,71 @@ export class GameManager {
     this.ctx.quadraticCurveTo(x, y, x + radius, y);
     this.ctx.closePath();
     this.ctx.fill();
+  }
+}
+
+// ---------- User Input Manager ----------
+
+type Direction = "UP" | "DOWN" | "LEFT" | "RIGHT";
+
+interface InputEvent {
+  direction: Direction;
+  timestamp: number;
+}
+
+class InputManager {
+  private listeners: ((event: InputEvent) => void)[] = [];
+  private keyMap: Record<string, Direction> = {
+    ArrowUp: "UP",
+    ArrowDown: "DOWN",
+    ArrowLeft: "LEFT",
+    ArrowRight: "RIGHT",
+    w: "UP",
+    s: "DOWN",
+    a: "LEFT",
+    d: "RIGHT",
+    W: "UP",
+    S: "DOWN",
+    A: "LEFT",
+    D: "RIGHT",
+  };
+
+  constructor() {
+    this.setupEventListeners();
+  }
+
+  public addListener(callback: (event: InputEvent) => void): void {
+    this.listeners.push(callback);
+  }
+
+  public removeListener(callback: (event: InputEvent) => void): void {
+    const index = this.listeners.indexOf(callback);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+
+  private setupEventListeners(): void {
+    document.addEventListener("keydown", this.handleKeyDown.bind(this));
+  }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    const direction = this.keyMap[event.key];
+    if (direction) {
+      event.preventDefault();
+      this.notifyListeners({
+        direction,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  private notifyListeners(event: InputEvent): void {
+    this.listeners.forEach((listener) => listener(event));
+  }
+
+  public cleanup(): void {
+    document.removeEventListener("keydown", this.handleKeyDown.bind(this));
+    this.listeners = [];
   }
 }
