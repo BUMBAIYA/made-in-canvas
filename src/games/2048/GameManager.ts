@@ -1,5 +1,3 @@
-import { randomNumberInRange } from "@/utils/randomNumberInRange";
-
 const MIN_GRID_GUTTER_SIZE = 8;
 
 /**
@@ -23,6 +21,22 @@ type Colors = {
   text: string;
   textLight: string;
   tile: Record<number, string>;
+};
+
+type GameGridStateType = {
+  id: number;
+  value: number;
+  position: {
+    row: number;
+    col: number;
+  };
+};
+
+type GameState = {
+  grid: Array<Array<GameGridStateType | null>>;
+  score: number;
+  moveCount: number;
+  currentGameState: "playing" | "won" | "lost";
 };
 
 export class GameManager {
@@ -53,12 +67,14 @@ export class GameManager {
   };
 
   private inputManager: InputManager;
+  private gameState: GameState;
 
   constructor(
     gameBoardContainer: HTMLDivElement,
     cellCount: number = DEFAULT_BOARD_SIZE,
   ) {
     this.inputManager = new InputManager();
+
     this.gameBoardContainer = gameBoardContainer;
     this.boardSize = cellCount;
     this.canvas = document.createElement("canvas");
@@ -72,6 +88,46 @@ export class GameManager {
     this.gameBoardContainer.appendChild(this.canvas);
 
     this.attachListeners();
+    this.gameState = this.initGameState();
+  }
+
+  private initGameState() {
+    const grid = Array(this.rendererData.gridSize)
+      .fill(null)
+      .map(() => Array(this.rendererData.gridSize).fill(null));
+
+    const newGameState: GameState = {
+      grid: grid,
+      score: 0,
+      moveCount: 0,
+      currentGameState: "playing",
+    };
+
+    return newGameState;
+  }
+
+  private addRandomTile(): void {
+    const emptyCells: GameGridStateType["position"][] = [];
+
+    for (let y = 0; y < this.rendererData.gridSize; y++) {
+      for (let x = 0; x < this.rendererData.gridSize; x++) {
+        if (this.gameState.grid[y][x] === null) {
+          emptyCells.push({ row: y, col: x });
+        }
+      }
+    }
+
+    if (emptyCells.length > 0) {
+      const randomCell =
+        emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      const value = Math.random() < 0.9 ? 2 : 4;
+
+      this.gameState.grid[randomCell.row][randomCell.col] = {
+        value,
+        position: randomCell,
+        id: Math.random() * 1000000,
+      };
+    }
   }
 
   private attachListeners() {
@@ -91,12 +147,12 @@ export class GameManager {
   }
 
   public startNewGame() {
+    this.gameState = this.initGameState();
     this.render();
     // Testing text rendering tile
-    const row = Math.floor(randomNumberInRange(0, this.boardSize));
-    const col = Math.floor(randomNumberInRange(0, this.boardSize));
-    this.drawTile(row, col, 2);
-    this.drawTile(col, row, 4);
+    this.addRandomTile();
+    this.addRandomTile();
+    this.drawTiles();
   }
 
   private resizeCanvas() {
@@ -113,6 +169,17 @@ export class GameManager {
 
   private clearCanvas() {
     this.ctx.clearRect(0, 0, this.rendererData.width, this.rendererData.height);
+  }
+
+  private drawTiles() {
+    for (let row = 0; row < this.gameState.grid.length; row++) {
+      for (let col = 0; col < this.gameState.grid[row].length; col++) {
+        const tile = this.gameState.grid[row][col];
+        if (tile) {
+          this.drawTile(row, col, tile.value);
+        }
+      }
+    }
   }
 
   private drawTile(row: number, col: number, value: number): void {
