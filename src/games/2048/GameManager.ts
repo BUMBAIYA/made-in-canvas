@@ -5,6 +5,7 @@ const MIN_GRID_GUTTER_SIZE = 8;
  */
 const DEFAULT_GUTTER_SIZE_PERCENTAGE = 2.5;
 const DEFAULT_BOARD_SIZE = 4;
+const DEFAULT_TARGET_SCORE = 2048;
 
 type RendererData = {
   width: number;
@@ -39,12 +40,20 @@ type GameState = {
   currentGameState: "playing" | "won" | "lost";
 };
 
+const DIRECTIONS = [
+  { x: 0, y: -1 }, // up
+  { x: 0, y: 1 }, // down
+  { x: -1, y: 0 }, // left
+  { x: 1, y: 0 }, // right
+];
+
 export class GameManager {
   private gameBoardContainer: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private rendererData: RendererData;
   private boardSize: number;
+  private targetScore = DEFAULT_TARGET_SCORE;
   private colors: Colors = {
     background: "#9c8a7b",
     cell: "#bdac97",
@@ -125,7 +134,7 @@ export class GameManager {
       this.gameState.grid[randomCell.row][randomCell.col] = {
         value,
         position: randomCell,
-        id: Math.random() * 1000000,
+        id: Math.random(),
       };
     }
   }
@@ -244,7 +253,39 @@ export class GameManager {
   }
 
   private onUserInputEvent(event: InputEvent): void {
-    console.log("Input Event:", event);
+    const isTiledMoved = this.moveTileEvent(event.direction);
+    if (isTiledMoved) {
+      this.render();
+    }
+  }
+
+  private moveTileEvent(direction: InputEvent["direction"]) {
+    if (this.gameState.currentGameState !== "playing") return false;
+
+    let moved = false;
+
+    switch (direction) {
+      case "UP":
+        moved = this.moveUp();
+        break;
+      case "DOWN":
+        moved = this.moveDown();
+        break;
+      case "LEFT":
+        moved = this.moveLeft();
+        break;
+      case "RIGHT":
+        moved = this.moveRight();
+        break;
+    }
+
+    if (moved) {
+      this.gameState.moveCount++;
+      this.addRandomTile();
+      this.checkGameState();
+    }
+
+    return moved;
   }
 
   private drawBoardBackgroundGrid(): void {
@@ -272,6 +313,182 @@ export class GameManager {
       this.rendererData.height,
       this.rendererData.boardBackgroundRadius,
     );
+  }
+
+  private moveUp(): boolean {
+    let moved = false;
+    for (let col = 0; col < this.rendererData.gridSize; col++) {
+      const column = this.getColumn(col);
+      const newColumn = this.mergeTiles(column);
+      if (this.arraysEqual(column, newColumn)) continue;
+
+      moved = true;
+      this.setColumn(col, newColumn);
+    }
+    return moved;
+  }
+
+  private moveDown(): boolean {
+    let moved = false;
+    for (let col = 0; col < this.boardSize; col++) {
+      const column = this.getColumn(col).reverse();
+      const newColumn = this.mergeTiles(column).reverse();
+      if (this.arraysEqual(this.getColumn(col), newColumn)) continue;
+
+      moved = true;
+      this.setColumn(col, newColumn);
+    }
+    return moved;
+  }
+
+  private moveLeft(): boolean {
+    let moved = false;
+    for (let row = 0; row < this.boardSize; row++) {
+      const rowTiles = this.getRow(row);
+      const newRow = this.mergeTiles(rowTiles);
+      if (this.arraysEqual(rowTiles, newRow)) continue;
+
+      moved = true;
+      this.setRow(row, newRow);
+    }
+    return moved;
+  }
+
+  private moveRight(): boolean {
+    let moved = false;
+    for (let row = 0; row < this.boardSize; row++) {
+      const rowTiles = this.getRow(row).reverse();
+      const newRow = this.mergeTiles(rowTiles).reverse();
+      if (this.arraysEqual(this.getRow(row), newRow)) continue;
+
+      moved = true;
+      this.setRow(row, newRow);
+    }
+    return moved;
+  }
+
+  private mergeTiles(
+    tiles: (GameGridStateType | null)[],
+  ): (GameGridStateType | null)[] {
+    const filtered = tiles.filter(
+      (tile) => tile !== null,
+    ) as GameGridStateType[];
+    const merged: (GameGridStateType | null)[] = [];
+    let i = 0;
+
+    while (i < filtered.length) {
+      if (
+        i < filtered.length - 1 &&
+        filtered[i].value === filtered[i + 1].value
+      ) {
+        const mergedTile: GameGridStateType = {
+          value: filtered[i].value * 2,
+          position: filtered[i].position,
+          id: Math.random(),
+        };
+        merged.push(mergedTile);
+        this.gameState.score += mergedTile.value;
+        i += 2;
+      } else {
+        merged.push(filtered[i]);
+        i++;
+      }
+    }
+
+    while (merged.length < this.boardSize) {
+      merged.push(null);
+    }
+
+    return merged;
+  }
+
+  private getColumn(col: number): (GameGridStateType | null)[] {
+    return this.gameState.grid.map((row) => row[col]);
+  }
+
+  private setColumn(col: number, tiles: (GameGridStateType | null)[]): void {
+    tiles.forEach((tile, row) => {
+      if (tile) {
+        tile.position = { row: row, col: col };
+      }
+      this.gameState.grid[row][col] = tile;
+    });
+  }
+
+  private getRow(row: number): (GameGridStateType | null)[] {
+    return [...this.gameState.grid[row]];
+  }
+
+  private setRow(row: number, tiles: (GameGridStateType | null)[]): void {
+    tiles.forEach((tile, col) => {
+      if (tile) {
+        tile.position = { row: row, col: col };
+      }
+      this.gameState.grid[row][col] = tile;
+    });
+  }
+
+  private arraysEqual(
+    a: (GameGridStateType | null)[],
+    b: (GameGridStateType | null)[],
+  ): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i]?.value !== b[i]?.value) return false;
+    }
+    return true;
+  }
+
+  private checkGameState(): void {
+    if (this.gameState.currentGameState !== "won" && this.hasWinningTile()) {
+      this.gameState.currentGameState = "won";
+    }
+
+    if (this.isGameOver()) {
+      this.gameState.currentGameState = "lost";
+    }
+  }
+
+  private hasWinningTile(): boolean {
+    return this.gameState.grid.some((row) =>
+      row.some((tile) => tile && tile.value >= this.targetScore),
+    );
+  }
+
+  private isGameOver(): boolean {
+    for (let y = 0; y < this.boardSize; y++) {
+      for (let x = 0; x < this.boardSize; x++) {
+        if (this.gameState.grid[y][x] === null) {
+          return false;
+        }
+      }
+    }
+
+    for (let y = 0; y < this.boardSize; y++) {
+      for (let x = 0; x < this.boardSize; x++) {
+        const current = this.gameState.grid[y][x];
+        if (!current) continue;
+
+        for (const dir of DIRECTIONS) {
+          const newX = x + dir.x;
+          const newY = y + dir.y;
+
+          if (
+            newX >= 0 &&
+            newX < this.boardSize &&
+            newY >= 0 &&
+            newY < this.boardSize
+          ) {
+            const adjacent = this.gameState.grid[newY][newX];
+            if (!adjacent || adjacent.value === current.value) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
+    return true;
   }
 
   private drawTileText(
