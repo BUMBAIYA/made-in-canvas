@@ -74,7 +74,10 @@ export function GamePage() {
       )}
 
       <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center p-5">
-        <div ref={gameBoardContainer} class="max-h-[450px] w-full flex-1" />
+        <div
+          ref={gameBoardContainer}
+          class="flex max-h-[450px] w-full flex-1 items-center justify-center"
+        />
       </main>
     </>
   );

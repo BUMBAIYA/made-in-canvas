@@ -88,8 +88,6 @@ export class GameManager {
     this.gameBoardContainer = gameBoardContainer;
     this.boardSize = cellCount;
     this.canvas = document.createElement("canvas");
-    this.canvas.style.display = "block";
-    this.canvas.style.margin = "0 auto";
     this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
     this.rendererData = this.calculateCanvasDimensions();
 
