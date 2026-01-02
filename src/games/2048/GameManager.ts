@@ -54,6 +54,7 @@ export class GameManager {
   private rendererData: RendererData;
   private boardSize: number;
   private targetScore = DEFAULT_TARGET_SCORE;
+  private uiStateListeners: ((event: GameState) => void)[] = [];
   private colors: Colors = {
     background: "#9c8a7b",
     cell: "#bdac97",
@@ -98,6 +99,16 @@ export class GameManager {
     this.gameBoardContainer.appendChild(this.canvas);
 
     this.attachListeners();
+  }
+
+  public attachGameUIStateListener(listener: (event: GameState) => void) {
+    this.uiStateListeners.push(listener);
+  }
+
+  private notifyUIStateListener() {
+    this.uiStateListeners.forEach((listener) => {
+      listener(this.gameState);
+    });
   }
 
   private initGameState() {
@@ -146,6 +157,7 @@ export class GameManager {
 
   public cleanup() {
     this.inputManager.cleanup();
+    this.uiStateListeners = [];
     window.removeEventListener("resize", this.onWindowResize.bind(this));
   }
 
@@ -163,6 +175,7 @@ export class GameManager {
     this.addRandomTile();
     this.addRandomTile();
     this.drawTiles();
+    this.notifyUIStateListener();
   }
 
   private resizeCanvas() {
@@ -283,6 +296,7 @@ export class GameManager {
       this.gameState.moveCount++;
       this.addRandomTile();
       this.checkGameState();
+      this.notifyUIStateListener();
     }
 
     return moved;
