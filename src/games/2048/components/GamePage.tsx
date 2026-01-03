@@ -45,27 +45,31 @@ export function GamePage() {
 
   return (
     <>
-      <header class="mx-auto flex w-full max-w-4xl items-center justify-between p-5">
-        <h1 class="text-4xl font-bold">2048</h1>
+      <header class="mx-auto grid w-full max-w-4xl p-5 md:grid-cols-[1fr_auto]">
         <div class="flex items-center">
-          <div class="bg-hover text-background flex min-w-28 flex-col rounded-xl px-5 py-1 text-center">
-            <span class="text-accent text-sm font-medium">Score</span>
-            <span class="text-accent text-2xl font-bold">
+          <h1 class="text-4xl font-bold">2048</h1>
+        </div>
+        <div class="mt-6 flex items-center justify-center space-x-4 md:mt-0 md:justify-normal">
+          <div class="bg-hover text-background flex min-w-24 flex-col rounded-xl px-4 py-1.5 text-center">
+            <span class="text-accent text-xs font-semibold capitalize">
+              SCORE
+            </span>
+            <span class="text-accent text-xl font-bold">
               {gameUIState().score}
             </span>
           </div>
+          <button
+            class="bg-accent text-background focus:ring-accent w-fit cursor-pointer rounded-lg px-4 py-1.5 ring-2 transition-all hover:scale-110 focus:scale-110 focus:ring-2 focus:ring-offset-2"
+            onClick={handleStartNewGame}
+          >
+            <span class="font-medium">New Game</span>
+          </button>
         </div>
-        <button
-          class="bg-accent text-background focus:ring-accent cursor-pointer rounded-lg px-3 py-1.5 ring-2 transition-all hover:scale-110 focus:scale-110 focus:ring-2 focus:ring-offset-2"
-          onClick={handleStartNewGame}
-        >
-          <span class="text-xl font-medium">New Game</span>
-        </button>
       </header>
 
       {gameUIState().gameState !== "playing" && (
         <div class="flex items-center justify-center">
-          <div class="bg-hover text-background flex min-w-28 flex-col rounded-xl px-5 py-1 text-center">
+          <div class="bg-hover text-background flex min-w-28 animate-bounce flex-col rounded-xl px-5 py-1 text-center">
             <span class="text-accent text-2xl font-bold">
               {gameUIState().gameState === "lost" ? "Game Over" : "You Won"}
             </span>
