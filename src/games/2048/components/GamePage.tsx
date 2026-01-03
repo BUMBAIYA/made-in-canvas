@@ -59,7 +59,7 @@ export function GamePage() {
             </span>
           </div>
           <button
-            class="bg-accent text-background focus:ring-accent w-fit cursor-pointer rounded-lg px-4 py-1.5 ring-2 transition-all hover:scale-110 focus:scale-110 focus:ring-2 focus:ring-offset-2"
+            class="bg-accent text-background focus:ring-accent w-fit cursor-pointer rounded-lg px-4 py-1.5 ring-2 transition-all hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
             onClick={handleStartNewGame}
           >
             <span class="font-medium">New Game</span>
