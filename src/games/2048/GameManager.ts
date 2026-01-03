@@ -300,6 +300,14 @@ export class GameManager {
     return moved;
   }
 
+  private getFontSize(value: number, cellSize: number): number {
+    const baseSize = cellSize * 0.425;
+
+    if (value < 100) return baseSize;
+    if (value < 1000) return baseSize * 0.9;
+    return baseSize * 0.8;
+  }
+
   private drawBoardBackgroundGrid(): void {
     this.ctx.fillStyle = this.colors.cell;
 
@@ -510,7 +518,7 @@ export class GameManager {
     cellSize: number,
   ): void {
     const text = value.toString();
-    const fontSize = cellSize / 2;
+    const fontSize = this.getFontSize(value, cellSize);
 
     this.ctx.font = `bold ${fontSize}px Arial`;
     this.ctx.textAlign = "center";
