@@ -2,8 +2,8 @@
 
 @theme {
   --color-accent: hsl(31, 18%, 40%);
-  --color-background: hsl(31, 18%, 90%);
-  --color-hover: hsl(31, 18%, 85%);
+  --color-background: hsl(31, 18%, 95%);
+  --color-hover: hsl(31, 18%, 90%);
 }
 
 @layer base {
