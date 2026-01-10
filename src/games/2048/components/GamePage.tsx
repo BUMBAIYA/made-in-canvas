@@ -1,9 +1,10 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
-import { GameManager } from "@/games/2048/GameManager";
+import { GameManager } from "@/games/2048/core/GameManager";
+import type { GameStateType } from "@/games/2048/core/types";
 
 type GameUISate = {
   score: number;
-  gameState: "playing" | "won" | "lost";
+  gameState: GameStateType["currentGameState"];
 };
 
 export function GamePage() {
@@ -16,16 +17,13 @@ export function GamePage() {
   });
 
   onMount(() => {
-    const uiUpdateHandler = (state: GameManager["gameState"]) => {
+    const uiUpdateHandler = (state: GameStateType) => {
       setGameUIState({
         score: state.score,
         gameState: state.currentGameState,
       });
     };
     gameManager = new GameManager(gameBoardContainer);
-    gameManager.startNewGame();
-
-    console.log(gameManager);
 
     gameManager.attachGameUIStateListener(uiUpdateHandler);
 
@@ -39,7 +37,7 @@ export function GamePage() {
       "Are you sure you want to start a new game?\nAll progress will be lost.",
     );
     if (response) {
-      gameManager.startNewGame();
+      gameManager.reset();
     }
   };
 
@@ -71,7 +69,9 @@ export function GamePage() {
         <div class="flex items-center justify-center">
           <div class="bg-hover text-background flex min-w-28 animate-bounce flex-col rounded-xl px-5 py-1 text-center">
             <span class="text-accent text-2xl font-bold">
-              {gameUIState().gameState === "lost" ? "Game Over" : "You Won"}
+              {gameUIState().gameState === "game-over"
+                ? "Game Over"
+                : "You Won"}
             </span>
           </div>
         </div>
