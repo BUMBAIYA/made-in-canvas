@@ -117,6 +117,17 @@ export class CanvasRenderer {
   }
 
   private drawTiles(gameLogicState: GameGridStateType): void {
+    // Track which tiles are in the grid to avoid double rendering
+    const gridTileIds = new Set<number>();
+    for (let row = 0; row < gameLogicState.length; row++) {
+      for (let col = 0; col < gameLogicState[row].length; col++) {
+        const tile = gameLogicState[row][col];
+        if (tile) {
+          gridTileIds.add(tile.id);
+        }
+      }
+    }
+
     // First pass: draw tiles that are not animating
     for (let row = 0; row < gameLogicState.length; row++) {
       for (let col = 0; col < gameLogicState[row].length; col++) {
@@ -127,18 +138,12 @@ export class CanvasRenderer {
       }
     }
 
-    // Second pass: draw animating tiles
-    for (let row = 0; row < gameLogicState.length; row++) {
-      for (let col = 0; col < gameLogicState[row].length; col++) {
-        const tile = gameLogicState[row][col];
-        if (tile) {
-          const animationState = this.animationManager.getAnimationState(
-            tile.id,
-          );
-          if (animationState) {
-            this.drawAnimatedTile(tile, animationState);
-          }
-        }
+    // Second pass: draw animating tiles (including those removed from grid)
+    const animatingTiles = this.animationManager.getAllAnimatingTiles();
+    for (const tile of animatingTiles) {
+      const animationState = this.animationManager.getAnimationState(tile.id);
+      if (animationState) {
+        this.drawAnimatedTile(tile, animationState);
       }
     }
   }

@@ -90,12 +90,39 @@ export class AnimationManager {
     this.animations.set(tile.id, animation);
   }
 
+  public addDelayedMergeAnimation(
+    tile: GameGridTileDataType,
+    position: GameGridPositionType,
+    delay: number,
+  ): void {
+    const animation: AnimationState = {
+      id: tile.id,
+      type: "merge",
+      startTime: this.currentTime + delay,
+      duration: this.config.mergeDuration,
+      startPosition: position,
+      endPosition: position,
+      startScale: 1.1,
+      endScale: 1,
+      tile,
+      isComplete: false,
+    };
+    this.animations.set(tile.id, animation);
+  }
+
+  public getConfig(): AnimationConfig {
+    return this.config;
+  }
+
   public update(deltaTime: number): void {
     this.currentTime += deltaTime;
 
     // Update all animations
     for (const [_id, animation] of this.animations) {
       if (animation.isComplete) continue;
+
+      // Skip animations that haven't started yet (delayed animations)
+      if (this.currentTime < animation.startTime) continue;
 
       const elapsed = this.currentTime - animation.startTime;
       const progress = Math.min(elapsed / animation.duration, 1);
@@ -122,6 +149,12 @@ export class AnimationManager {
     return this.animations.size > 0;
   }
 
+  public getAllAnimatingTiles(): GameGridTileDataType[] {
+    return Array.from(this.animations.values())
+      .filter((anim) => !anim.isComplete)
+      .map((anim) => anim.tile);
+  }
+
   public clearAllAnimations(): void {
     this.animations.clear();
   }
@@ -129,6 +162,11 @@ export class AnimationManager {
   public getCurrentPosition(tileId: number): GameGridPositionType | null {
     const animation = this.animations.get(tileId);
     if (!animation) return null;
+
+    // If animation hasn't started yet (delayed), return start position
+    if (this.currentTime < animation.startTime) {
+      return animation.startPosition;
+    }
 
     const elapsed = this.currentTime - animation.startTime;
     const progress = Math.min(elapsed / animation.duration, 1);
@@ -155,6 +193,11 @@ export class AnimationManager {
   public getCurrentScale(tileId: number): number {
     const animation = this.animations.get(tileId);
     if (!animation) return 1;
+
+    // If animation hasn't started yet (delayed), return start scale
+    if (this.currentTime < animation.startTime) {
+      return animation.startScale;
+    }
 
     const elapsed = this.currentTime - animation.startTime;
     const progress = Math.min(elapsed / animation.duration, 1);

@@ -173,9 +173,9 @@ export class GameLogicManager {
           value: filtered[i].value * 2,
           startPosition: filtered[i].startPosition,
           endPosition: filtered[i].endPosition,
-          isMerged: filtered[i].isMerged,
-          animationType: filtered[i].animationType,
-          id: Math.random() * 1000000,
+          isMerged: true,
+          animationType: "merge",
+          id: filtered[i + 1].id, // Keep the right tile's ID so we can track it and it's the tile that wil be removed from the grid
         };
         merged.push(mergedTile);
         this.gameLogicState.score += mergedTile.value;
@@ -228,10 +228,12 @@ export class GameLogicManager {
   ): void {
     // Map tiles to their actual positions in the old column
     const oldTilePositions = new Map<number, GameGridPositionType>();
+    const oldTileMap = new Map<number, GameGridTileDataType>();
     oldColumn.forEach((oldTile, oldRow) => {
       if (oldTile) {
         // Use the actual grid position (oldRow), not the tile's startPosition which might be stale
         oldTilePositions.set(oldTile.id, { row: oldRow, col: col });
+        oldTileMap.set(oldTile.id, oldTile);
       }
     });
 
@@ -251,11 +253,73 @@ export class GameLogicManager {
             );
           }
         } else if (tile.isMerged) {
-          // Tile merged - add merge animation
-          tile.startPosition = { row: row, col: col };
-          tile.endPosition = { row: row, col: col };
-          if (this.animationManager) {
-            this.animationManager.addMergeAnimation(tile);
+          // Tile merged - need to find both tiles that merged
+          // The merged tile keeps the right tile's ID
+          const mergedValue = tile.value;
+          const halfValue = mergedValue / 2;
+          const finalPosition = { row: row, col: col };
+
+          // Find the right tile (the one that kept its ID - it's in oldColumn)
+          // The merged tile has the same ID as the right tile, but double the value
+          const rightTile = oldTileMap.get(tile.id);
+
+          // Verify it's the right tile by checking it has half the value
+          if (!rightTile || rightTile.value !== halfValue) {
+            // Fallback: if we can't find the right tile, just do merge animation
+            tile.startPosition = finalPosition;
+            tile.endPosition = finalPosition;
+            if (this.animationManager) {
+              this.animationManager.addMergeAnimation(tile);
+            }
+            this.gameLogicState.grid[row][col] = tile;
+            return;
+          }
+
+          // Find the left tile (the one that was removed - same value, different ID, above)
+          let leftTile: GameGridTileDataType | null = null;
+          if (rightTile) {
+            const rightOldPosition = oldTilePositions.get(rightTile.id)!;
+            for (const [tileId, oldTile] of oldTileMap) {
+              if (tileId !== tile.id && oldTile.value === halfValue) {
+                const leftOldPosition = oldTilePositions.get(tileId)!;
+                // Check if this tile is above the right tile (for vertical movement)
+                if (leftOldPosition.row < rightOldPosition.row) {
+                  leftTile = oldTile;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (leftTile && rightTile && this.animationManager) {
+            const leftOldPosition = oldTilePositions.get(leftTile.id)!;
+            const rightOldPosition = oldTilePositions.get(rightTile.id)!;
+
+            // Animate both tiles moving to the final position
+            this.animationManager.addMoveAnimation(
+              leftTile,
+              leftOldPosition,
+              finalPosition,
+            );
+            this.animationManager.addMoveAnimation(
+              rightTile,
+              rightOldPosition,
+              finalPosition,
+            );
+
+            // Add delayed merge animation that starts after move completes
+            this.animationManager.addDelayedMergeAnimation(
+              tile,
+              finalPosition,
+              this.animationManager.getConfig().moveDuration,
+            );
+          } else {
+            // Fallback: if we can't find both tiles, just do merge animation
+            tile.startPosition = finalPosition;
+            tile.endPosition = finalPosition;
+            if (this.animationManager) {
+              this.animationManager.addMergeAnimation(tile);
+            }
           }
         } else {
           // New tile - add appear animation
@@ -277,10 +341,12 @@ export class GameLogicManager {
   ): void {
     // Map tiles to their actual positions in the old row
     const oldTilePositions = new Map<number, GameGridPositionType>();
+    const oldTileMap = new Map<number, GameGridTileDataType>();
     oldRow.forEach((oldTile, oldCol) => {
       if (oldTile) {
         // Use the actual grid position (oldCol), not the tile's startPosition which might be stale
         oldTilePositions.set(oldTile.id, { row: row, col: oldCol });
+        oldTileMap.set(oldTile.id, oldTile);
       }
     });
 
@@ -300,11 +366,73 @@ export class GameLogicManager {
             );
           }
         } else if (tile.isMerged) {
-          // Tile merged - add merge animation
-          tile.startPosition = { row: row, col: col };
-          tile.endPosition = { row: row, col: col };
-          if (this.animationManager) {
-            this.animationManager.addMergeAnimation(tile);
+          // Tile merged - need to find both tiles that merged
+          // The merged tile keeps the right tile's ID
+          const mergedValue = tile.value;
+          const halfValue = mergedValue / 2;
+          const finalPosition = { row: row, col: col };
+
+          // Find the right tile (the one that kept its ID - it's in oldRow)
+          // The merged tile has the same ID as the right tile, but double the value
+          const rightTile = oldTileMap.get(tile.id);
+
+          // Verify it's the right tile by checking it has half the value
+          if (!rightTile || rightTile.value !== halfValue) {
+            // Fallback: if we can't find the right tile, just do merge animation
+            tile.startPosition = finalPosition;
+            tile.endPosition = finalPosition;
+            if (this.animationManager) {
+              this.animationManager.addMergeAnimation(tile);
+            }
+            this.gameLogicState.grid[row][col] = tile;
+            return;
+          }
+
+          // Find the left tile (the one that was removed - same value, different ID, to the left)
+          let leftTile: GameGridTileDataType | null = null;
+          if (rightTile) {
+            const rightOldPosition = oldTilePositions.get(rightTile.id)!;
+            for (const [tileId, oldTile] of oldTileMap) {
+              if (tileId !== tile.id && oldTile.value === halfValue) {
+                const leftOldPosition = oldTilePositions.get(tileId)!;
+                // Check if this tile is to the left of the right tile
+                if (leftOldPosition.col < rightOldPosition.col) {
+                  leftTile = oldTile;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (leftTile && rightTile && this.animationManager) {
+            const leftOldPosition = oldTilePositions.get(leftTile.id)!;
+            const rightOldPosition = oldTilePositions.get(rightTile.id)!;
+
+            // Animate both tiles moving to the final position
+            this.animationManager.addMoveAnimation(
+              leftTile,
+              leftOldPosition,
+              finalPosition,
+            );
+            this.animationManager.addMoveAnimation(
+              rightTile,
+              rightOldPosition,
+              finalPosition,
+            );
+
+            // Add delayed merge animation that starts after move completes
+            this.animationManager.addDelayedMergeAnimation(
+              tile,
+              finalPosition,
+              this.animationManager.getConfig().moveDuration,
+            );
+          } else {
+            // Fallback: if we can't find both tiles, just do merge animation
+            tile.startPosition = finalPosition;
+            tile.endPosition = finalPosition;
+            if (this.animationManager) {
+              this.animationManager.addMergeAnimation(tile);
+            }
           }
         } else {
           // New tile - add appear animation
