@@ -25,15 +25,17 @@ export class CanvasRenderer {
   private colors: CanvasRendererColorsType;
   private gameBoardContainer: HTMLDivElement;
   private boardGridSize: number;
-  private requestAnimationFrameId: number | null;
   private animationManager: AnimationManager;
-  private lastFrameTime: number = 0;
 
-  constructor(gameBoardContainer: HTMLDivElement, size: number) {
+  constructor(
+    gameBoardContainer: HTMLDivElement,
+    size: number,
+    animationManager: AnimationManager,
+  ) {
     this.gameBoardContainer = gameBoardContainer;
     this.boardGridSize = size;
     this.colors = this.getDefaultColors();
-    this.animationManager = new AnimationManager();
+    this.animationManager = animationManager;
 
     this.canvas = document.createElement("canvas");
     this.canvas.style.display = "block";
@@ -42,7 +44,6 @@ export class CanvasRenderer {
     this.rendererConfig = this.calculateCanvasDimension();
     this.resizeCanvas();
     this.gameBoardContainer.appendChild(this.canvas);
-    this.requestAnimationFrameId = null;
   }
 
   public render(gameLogicState: GameGridStateType) {
@@ -51,68 +52,13 @@ export class CanvasRenderer {
     this.drawTiles(gameLogicState);
   }
 
-  public getAnimationManager(): AnimationManager {
-    return this.animationManager;
-  }
-
-  public startRenderLoop(gameLogicState: GameGridStateType): void {
-    // Cancel existing animation loop if any
-    if (this.requestAnimationFrameId !== null) {
-      cancelAnimationFrame(this.requestAnimationFrameId);
-    }
-
-    const animate = (currentTime: number) => {
-      console.log("animate");
-      // Initialize lastFrameTime on first frame to avoid huge deltaTime
-      if (this.lastFrameTime === 0) {
-        this.lastFrameTime = currentTime;
-      }
-
-      const deltaTime = currentTime - this.lastFrameTime;
-      this.lastFrameTime = currentTime;
-
-      // Update animations
-      this.animationManager.update(deltaTime);
-
-      // Render the frame
-      this.render(gameLogicState);
-
-      // Continue the loop if there are active animations
-      if (this.animationManager.hasActiveAnimations()) {
-        this.requestAnimationFrameId = requestAnimationFrame(animate);
-      } else {
-        this.requestAnimationFrameId = null;
-      }
-    };
-
-    console.log("startRenderLoop");
-
-    this.lastFrameTime = 0;
-    this.requestAnimationFrameId = requestAnimationFrame(animate);
+  public handleResize(): void {
+    this.rendererConfig = this.calculateCanvasDimension();
+    this.resizeCanvas();
   }
 
   public getRendererConfig(): CanvasRendererConfigType {
     return this.rendererConfig;
-  }
-
-  public cleanup(): void {
-    if (this.requestAnimationFrameId) {
-      cancelAnimationFrame(this.requestAnimationFrameId);
-    }
-  }
-
-  public onWindowResize(gameLogicState: GameGridStateType): void {
-    this.rendererConfig = this.calculateCanvasDimension();
-
-    if (
-      this.rendererConfig.width === this.canvas.width &&
-      this.rendererConfig.height === this.canvas.height
-    ) {
-      return;
-    }
-
-    this.resizeCanvas();
-    this.render(gameLogicState);
   }
 
   private drawTiles(gameLogicState: GameGridStateType): void {

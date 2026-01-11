@@ -24,7 +24,7 @@ export interface AnimationConfig {
 }
 
 export class AnimationManager {
-  private animations: Map<number, AnimationState> = new Map();
+  private animationQueues: Map<number, AnimationState[]> = new Map();
   private config: AnimationConfig;
   private currentTime: number = 0;
 
@@ -51,7 +51,7 @@ export class AnimationManager {
       tile,
       isComplete: false,
     };
-    this.animations.set(tile.id, animation);
+    this.queueAnimation(tile.id, animation);
   }
 
   public addMoveAnimation(
@@ -71,7 +71,7 @@ export class AnimationManager {
       tile,
       isComplete: false,
     };
-    this.animations.set(tile.id, animation);
+    this.queueAnimation(tile.id, animation);
   }
 
   public addMergeAnimation(tile: GameGridTileDataType): void {
@@ -87,7 +87,7 @@ export class AnimationManager {
       tile,
       isComplete: false,
     };
-    this.animations.set(tile.id, animation);
+    this.queueAnimation(tile.id, animation);
   }
 
   public addDelayedMergeAnimation(
@@ -107,7 +107,39 @@ export class AnimationManager {
       tile,
       isComplete: false,
     };
-    this.animations.set(tile.id, animation);
+    this.queueAnimation(tile.id, animation);
+  }
+
+  /**
+   * Queue an animation for a tile. If there are existing animations,
+   * the new animation will start after the last animation completes.
+   * However, if the animation already has a startTime set (for delayed animations),
+   * we respect that time but ensure it's not before the last animation completes.
+   */
+  private queueAnimation(tileId: number, animation: AnimationState): void {
+    const queue = this.animationQueues.get(tileId) || [];
+
+    // If there are existing animations, calculate the start time based on the last animation
+    if (queue.length > 0) {
+      const lastAnimation = queue[queue.length - 1];
+      const lastAnimationEndTime =
+        lastAnimation.startTime + lastAnimation.duration;
+
+      // If the animation's startTime is already set (delayed animation),
+      // use the maximum of that time and when the last animation ends
+      if (animation.startTime > this.currentTime) {
+        animation.startTime = Math.max(
+          animation.startTime,
+          lastAnimationEndTime,
+        );
+      } else {
+        // Otherwise, start after the last animation completes
+        animation.startTime = lastAnimationEndTime;
+      }
+    }
+
+    queue.push(animation);
+    this.animationQueues.set(tileId, queue);
   }
 
   public getConfig(): AnimationConfig {
@@ -117,51 +149,73 @@ export class AnimationManager {
   public update(deltaTime: number): void {
     this.currentTime += deltaTime;
 
-    // Update all animations
-    for (const [_id, animation] of this.animations) {
-      if (animation.isComplete) continue;
+    // Update all animation queues
+    for (const [tileId, queue] of this.animationQueues) {
+      if (queue.length === 0) continue;
+
+      // Process the first (current) animation in the queue
+      const currentAnimation = queue[0];
+
+      if (currentAnimation.isComplete) {
+        // Remove completed animation and move to next in queue
+        queue.shift();
+        // If queue is empty, remove the tile entry
+        if (queue.length === 0) {
+          this.animationQueues.delete(tileId);
+        }
+        continue;
+      }
 
       // Skip animations that haven't started yet (delayed animations)
-      if (this.currentTime < animation.startTime) continue;
+      if (this.currentTime < currentAnimation.startTime) continue;
 
-      const elapsed = this.currentTime - animation.startTime;
-      const progress = Math.min(elapsed / animation.duration, 1);
+      const elapsed = this.currentTime - currentAnimation.startTime;
+      const progress = Math.min(elapsed / currentAnimation.duration, 1);
       const _easedProgress = this.config.easing(progress);
 
       if (progress >= 1) {
-        animation.isComplete = true;
-      }
-    }
-
-    // Remove completed animations
-    for (const [_id, animation] of this.animations) {
-      if (animation.isComplete) {
-        this.animations.delete(animation.id);
+        currentAnimation.isComplete = true;
       }
     }
   }
 
   public getAnimationState(tileId: number): AnimationState | null {
-    return this.animations.get(tileId) || null;
+    const queue = this.animationQueues.get(tileId);
+    if (!queue || queue.length === 0) return null;
+
+    const currentAnimation = queue[0];
+    return currentAnimation.isComplete ? null : currentAnimation;
   }
 
   public hasActiveAnimations(): boolean {
-    return this.animations.size > 0;
+    for (const queue of this.animationQueues.values()) {
+      if (queue.length > 0 && !queue[0].isComplete) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public getAllAnimatingTiles(): GameGridTileDataType[] {
-    return Array.from(this.animations.values())
-      .filter((anim) => !anim.isComplete)
-      .map((anim) => anim.tile);
+    const animatingTiles: GameGridTileDataType[] = [];
+    for (const queue of this.animationQueues.values()) {
+      if (queue.length > 0 && !queue[0].isComplete) {
+        animatingTiles.push(queue[0].tile);
+      }
+    }
+    return animatingTiles;
   }
 
   public clearAllAnimations(): void {
-    this.animations.clear();
+    this.animationQueues.clear();
   }
 
   public getCurrentPosition(tileId: number): GameGridPositionType | null {
-    const animation = this.animations.get(tileId);
-    if (!animation) return null;
+    const queue = this.animationQueues.get(tileId);
+    if (!queue || queue.length === 0) return null;
+
+    const animation = queue[0];
+    if (animation.isComplete) return null;
 
     // If animation hasn't started yet (delayed), return start position
     if (this.currentTime < animation.startTime) {
@@ -170,7 +224,7 @@ export class AnimationManager {
 
     const elapsed = this.currentTime - animation.startTime;
     const progress = Math.min(elapsed / animation.duration, 1);
-    // Use a back easing fr move animation to give it a slight overshoot feel like it have momentum
+    // Use a back easing for move animation to give it a slight overshoot feel like it have momentum
     const easedProgress =
       animation.type === "move"
         ? this.easeOutBack(progress)
@@ -191,8 +245,11 @@ export class AnimationManager {
   }
 
   public getCurrentScale(tileId: number): number {
-    const animation = this.animations.get(tileId);
-    if (!animation) return 1;
+    const queue = this.animationQueues.get(tileId);
+    if (!queue || queue.length === 0) return 1;
+
+    const animation = queue[0];
+    if (animation.isComplete) return 1;
 
     // If animation hasn't started yet (delayed), return start scale
     if (this.currentTime < animation.startTime) {
