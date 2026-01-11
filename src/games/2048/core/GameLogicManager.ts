@@ -45,6 +45,28 @@ export class GameLogicManager {
     return this.gameLogicState;
   }
 
+  public triggerWaveAnimation(): void {
+    if (!this.animationManager) return;
+
+    const delayPerTile = 30;
+
+    this.animationManager.clearAllAnimations();
+
+    for (let row = 0; row < this.gameLogicState.grid.length; row++) {
+      for (let col = 0; col < this.gameLogicState.grid[row].length; col++) {
+        const tile = this.gameLogicState.grid[row][col];
+        if (tile) {
+          // Calculate delay based on distance from top-left
+          // Tiles closer to top-left start earlier
+          const distance = row + col;
+          const delay = distance * delayPerTile;
+
+          this.animationManager.addWaveAnimation(tile, { row, col }, delay);
+        }
+      }
+    }
+  }
+
   public move(direction: InputEvent["direction"]): boolean {
     if (this.gameLogicState.hasNoValidMoveInDirection === direction)
       return false;
@@ -54,7 +76,6 @@ export class GameLogicManager {
 
     this.clearMergedFlags();
 
-    console.log("Move Calculation Started", direction);
     switch (direction) {
       case "UP":
         moved = this.moveUp();
@@ -81,10 +102,6 @@ export class GameLogicManager {
     // Set the hasNoValidMoveInDirection flag to the current direction so that the input manager can block input in that direction for the next moves in same direction until the player moves in a different direction.
     if (!moved) {
       this.gameLogicState.hasNoValidMoveInDirection = direction;
-      console.log(
-        "hasNoMoveInDirection",
-        this.gameLogicState.hasNoValidMoveInDirection,
-      );
     }
 
     return moved;

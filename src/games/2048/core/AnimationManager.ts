@@ -5,7 +5,7 @@ import type {
 
 export interface AnimationState {
   id: number;
-  type: "appear" | "move" | "merge" | "disappear";
+  type: "appear" | "move" | "merge" | "disappear" | "wave";
   startTime: number;
   duration: number;
   startPosition: GameGridPositionType;
@@ -23,6 +23,7 @@ export interface AnimationConfig {
   moveDuration: number;
   mergeDuration: number;
   disappearDuration: number;
+  waveDuration: number;
   easing: (t: number) => number;
 }
 
@@ -37,6 +38,7 @@ export class AnimationManager {
       moveDuration: 150,
       mergeDuration: 200,
       disappearDuration: 150,
+      waveDuration: 300,
       easing: this.easeOutCubic,
       ...config,
     };
@@ -129,6 +131,26 @@ export class AnimationManager {
       endScale: 1,
       startOpacity: 1,
       endOpacity: 0,
+      tile,
+      isComplete: false,
+    };
+    this.queueAnimation(tile.id, animation);
+  }
+
+  public addWaveAnimation(
+    tile: GameGridTileDataType,
+    position: GameGridPositionType,
+    delay: number = 0,
+  ): void {
+    const animation: AnimationState = {
+      id: tile.id,
+      type: "wave",
+      startTime: this.currentTime + delay,
+      duration: this.config.waveDuration,
+      startPosition: position,
+      endPosition: position,
+      startScale: 1,
+      endScale: 1.075,
       tile,
       isComplete: false,
     };
@@ -283,6 +305,13 @@ export class AnimationManager {
 
     const elapsed = this.currentTime - animation.startTime;
     const progress = Math.min(elapsed / animation.duration, 1);
+
+    if (animation.type === "wave") {
+      // sin wave for smooth scale up and down
+      const waveValue = Math.sin(progress * Math.PI);
+      return this.lerp(animation.startScale, animation.endScale, waveValue);
+    }
+
     const easedProgress = this.config.easing(progress);
 
     return this.lerp(animation.startScale, animation.endScale, easedProgress);

@@ -63,8 +63,15 @@ export class GameManager {
   }
 
   private notifyUIStateListener() {
+    const gameState = this.gameLogic.getGameLogicState();
+
+    if (gameState.currentGameState === "game-over") {
+      this.gameLogic.triggerWaveAnimation();
+      this.startRenderLoop();
+    }
+
     this.uiStateListeners.forEach((listener) => {
-      listener(this.gameLogic.getGameLogicState());
+      listener(gameState);
     });
   }
 
@@ -121,7 +128,6 @@ export class GameManager {
 
   private handleInput(event: InputEvent): void {
     const { currentGameState } = this.gameLogic.getGameLogicState();
-    console.log("Input Event:", event, currentGameState);
     if (currentGameState !== "playing") return;
 
     const moved = this.gameLogic.move(event.direction);
