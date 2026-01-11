@@ -37,7 +37,6 @@ export class CanvasRenderer {
 
     this.canvas = document.createElement("canvas");
     this.canvas.style.display = "block";
-    this.canvas.style.margin = "0 auto";
     this.ctx = this.canvas.getContext("2d")!;
 
     this.rendererConfig = this.calculateCanvasDimension();
