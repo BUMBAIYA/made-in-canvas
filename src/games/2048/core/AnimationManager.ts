@@ -5,13 +5,15 @@ import type {
 
 export interface AnimationState {
   id: number;
-  type: "appear" | "move" | "merge";
+  type: "appear" | "move" | "merge" | "disappear";
   startTime: number;
   duration: number;
   startPosition: GameGridPositionType;
   endPosition: GameGridPositionType;
   startScale: number;
   endScale: number;
+  startOpacity?: number;
+  endOpacity?: number;
   tile: GameGridTileDataType;
   isComplete: boolean;
 }
@@ -20,6 +22,7 @@ export interface AnimationConfig {
   appearDuration: number;
   moveDuration: number;
   mergeDuration: number;
+  disappearDuration: number;
   easing: (t: number) => number;
 }
 
@@ -33,6 +36,7 @@ export class AnimationManager {
       appearDuration: 200,
       moveDuration: 150,
       mergeDuration: 200,
+      disappearDuration: 150,
       easing: this.easeOutCubic,
       ...config,
     };
@@ -104,6 +108,27 @@ export class AnimationManager {
       endPosition: position,
       startScale: 1.1,
       endScale: 1,
+      tile,
+      isComplete: false,
+    };
+    this.queueAnimation(tile.id, animation);
+  }
+
+  public addDisappearAnimation(
+    tile: GameGridTileDataType,
+    position: GameGridPositionType,
+  ): void {
+    const animation: AnimationState = {
+      id: tile.id,
+      type: "disappear",
+      startTime: this.currentTime,
+      duration: this.config.disappearDuration,
+      startPosition: position,
+      endPosition: position,
+      startScale: 1,
+      endScale: 1,
+      startOpacity: 1,
+      endOpacity: 0,
       tile,
       isComplete: false,
     };
@@ -261,6 +286,41 @@ export class AnimationManager {
     const easedProgress = this.config.easing(progress);
 
     return this.lerp(animation.startScale, animation.endScale, easedProgress);
+  }
+
+  public getCurrentOpacity(tileId: number): number {
+    const queue = this.animationQueues.get(tileId);
+    if (!queue || queue.length === 0) return 1;
+
+    const animation = queue[0];
+    if (animation.isComplete) {
+      // If animation is complete and it was a disappear, return 0
+      if (animation.type === "disappear") return 0;
+      return 1;
+    }
+
+    // If opacity is not defined for this animation, return 1
+    if (
+      animation.startOpacity === undefined ||
+      animation.endOpacity === undefined
+    ) {
+      return 1;
+    }
+
+    // If animation hasn't started yet (delayed), return start opacity
+    if (this.currentTime < animation.startTime) {
+      return animation.startOpacity;
+    }
+
+    const elapsed = this.currentTime - animation.startTime;
+    const progress = Math.min(elapsed / animation.duration, 1);
+    const easedProgress = this.config.easing(progress);
+
+    return this.lerp(
+      animation.startOpacity,
+      animation.endOpacity,
+      easedProgress,
+    );
   }
 
   private lerp(start: number, end: number, t: number): number {
