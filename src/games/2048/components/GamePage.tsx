@@ -102,7 +102,7 @@ export function GamePage() {
         >
           <button
             onClick={handleStartNewGame}
-            class="border-accent text-accent focus:ring-accent flex h-16 w-full max-w-[450px] transform-gpu cursor-pointer items-center justify-center gap-2 rounded-xl border-2 p-4 transition-transform hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
+            class="border-accent text-accent focus:ring-accent hover:bg-hover flex h-16 w-full max-w-[450px] transform-gpu cursor-pointer items-center justify-center gap-2 rounded-xl border-2 p-4 transition-transform hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
           >
             <span class="text-lg font-semibold">Try Again</span>
           </button>
