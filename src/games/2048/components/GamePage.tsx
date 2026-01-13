@@ -5,6 +5,7 @@ import type { GameStateType } from "@/games/2048/core/types";
 type GameUISate = {
   score: number;
   gameState: GameStateType["currentGameState"];
+  movesCount: number;
 };
 
 export function GamePage() {
@@ -14,6 +15,7 @@ export function GamePage() {
   const [gameUIState, setGameUIState] = createSignal<GameUISate>({
     gameState: "playing",
     score: 0,
+    movesCount: 0,
   });
 
   onMount(() => {
@@ -21,6 +23,7 @@ export function GamePage() {
       setGameUIState({
         score: state.score,
         gameState: state.currentGameState,
+        movesCount: state.movesCount,
       });
     };
     gameManager = new GameManager(gameBoardContainer);
@@ -31,6 +34,13 @@ export function GamePage() {
       gameManager.cleanup();
     });
   });
+
+  const isGameOver = () => {
+    return (
+      gameUIState().gameState === "game-over" ||
+      gameUIState().gameState === "won"
+    );
+  };
 
   const handleStartNewGame = () => {
     const response = confirm(
@@ -43,45 +53,60 @@ export function GamePage() {
 
   return (
     <>
-      <header class="mx-auto grid w-full max-w-4xl p-5 md:grid-cols-[1fr_auto]">
-        <div class="flex items-center">
-          <h1 class="text-4xl font-bold">2048</h1>
+      <header class="relative mx-auto min-h-36 w-full max-w-4xl md:min-h-28">
+        <div
+          data-gameover={isGameOver()}
+          class="absolute inset-x-0 flex translate-y-[-100%] transform-gpu flex-col items-center justify-center p-4 opacity-0 duration-200 will-change-[opacity] data-[gameover=true]:top-1/2 data-[gameover=true]:-translate-y-1/2 data-[gameover=true]:opacity-100"
+        >
+          <span class="text-accent text-4xl font-bold">Game Over</span>
+          <p class="text-accent">
+            {gameUIState().score} points scored in {gameUIState().movesCount}{" "}
+            moves
+          </p>
         </div>
-        <div class="mt-6 flex items-center justify-center space-x-4 md:mt-0 md:justify-normal">
-          <div class="bg-hover text-background flex min-w-24 flex-col rounded-xl px-4 py-1.5 text-center">
-            <span class="text-accent text-xs font-semibold capitalize">
-              SCORE
-            </span>
-            <span class="text-accent text-xl font-bold">
-              {gameUIState().score}
-            </span>
+        <div
+          data-gameover={isGameOver()}
+          class="absolute inset-x-0 grid w-full transform-gpu p-4 duration-200 data-[gameover=true]:translate-y-[-100%] data-[gameover=true]:opacity-0 md:grid-cols-[1fr_auto]"
+        >
+          <div class="flex items-center">
+            <h1 class="text-4xl font-bold">2048</h1>
           </div>
-          <button
-            class="bg-accent text-background focus:ring-accent w-fit cursor-pointer rounded-lg px-4 py-1.5 ring-2 transition-all hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
-            onClick={handleStartNewGame}
-          >
-            <span class="font-medium">New Game</span>
-          </button>
+          <div class="mt-3 flex items-center justify-center space-x-4 md:mt-0 md:justify-normal">
+            <div class="bg-hover text-background flex min-w-24 flex-col rounded-xl px-4 py-1.5 text-center">
+              <span class="text-accent text-xs font-semibold capitalize">
+                SCORE
+              </span>
+              <span class="text-accent text-xl font-bold">
+                {gameUIState().score}
+              </span>
+            </div>
+            <button
+              class="bg-accent text-background focus:ring-accent w-fit cursor-pointer rounded-lg px-4 py-1.5 ring-2 transition-all hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
+              onClick={handleStartNewGame}
+            >
+              <span class="font-medium">New Game</span>
+            </button>
+          </div>
+          <div />
         </div>
       </header>
 
-      {gameUIState().gameState !== "playing" && (
-        <div class="flex items-center justify-center">
-          <div class="bg-hover text-background flex min-w-28 animate-bounce flex-col rounded-xl px-5 py-1 text-center">
-            <span class="text-accent text-2xl font-bold">
-              {gameUIState().gameState === "game-over"
-                ? "Game Over"
-                : "You Won"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center p-5">
+      <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col p-5 md:p-0">
         <div
           ref={gameBoardContainer}
-          class="flex max-h-[450px] w-full flex-1 items-center justify-center"
+          class="flex w-full flex-1 items-center justify-center md:max-h-[450px]"
         />
+        <div
+          data-gameover={isGameOver()}
+          class="mt-8 flex h-0 w-full translate-y-[100%] transform-gpu items-center justify-center opacity-0 transition-all duration-200 data-[gameover=true]:h-16 data-[gameover=true]:translate-y-0 data-[gameover=true]:opacity-100"
+        >
+          <button
+            onClick={handleStartNewGame}
+            class="border-accent text-accent focus:ring-accent flex h-16 w-full max-w-[450px] transform-gpu cursor-pointer items-center justify-center gap-2 rounded-xl border-2 p-4 transition-transform hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
+          >
+            <span class="text-lg font-semibold">Try Again</span>
+          </button>
+        </div>
       </main>
     </>
   );

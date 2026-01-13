@@ -66,8 +66,10 @@ export class GameManager {
     const gameState = this.gameLogic.getGameLogicState();
 
     if (gameState.currentGameState === "game-over") {
-      this.gameLogic.triggerWaveAnimation();
-      this.startRenderLoop();
+      setTimeout(() => {
+        this.gameLogic.triggerWaveAnimation();
+        this.startRenderLoop();
+      }, 300); // Wait for the animation to reveal the game over state
     }
 
     this.uiStateListeners.forEach((listener) => {
