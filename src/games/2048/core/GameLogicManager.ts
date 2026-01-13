@@ -18,6 +18,8 @@ export class GameLogicManager {
   private gameLogicState: GameStateType;
   private config: GameConfigType;
   private animationManager: AnimationManager | null = null;
+  private saveDebounceTimer: number = -1;
+  private readonly SAVE_DEBOUNCE_DELAY = 300; // 300ms debounce delay
 
   constructor(config: GameConfigType) {
     this.config = config;
@@ -29,9 +31,13 @@ export class GameLogicManager {
   }
 
   public start(): void {
-    this.addRandomTile();
-    this.addRandomTile();
+    const loaded = this.loadGameState();
+    if (!loaded) {
+      this.addRandomTile();
+      this.addRandomTile();
+    }
     this.gameLogicState.hasNoValidMoveInDirection = null;
+    this.saveGameState(true);
   }
 
   public reset(): void {
@@ -39,10 +45,102 @@ export class GameLogicManager {
     this.addRandomTile();
     this.addRandomTile();
     this.gameLogicState.hasNoValidMoveInDirection = null;
+    this.clearSavedGameState();
   }
 
   public getGameLogicState(): GameStateType {
     return this.gameLogicState;
+  }
+
+  public saveGameState(immediate: boolean = false): void {
+    if (this.saveDebounceTimer !== -1) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = -1;
+    }
+
+    const performSave = () => {
+      try {
+        const saveData = {
+          score: this.gameLogicState.score,
+          movesCount: this.gameLogicState.movesCount,
+          currentGameState: this.gameLogicState.currentGameState,
+          grid: this.gameLogicState.grid.map((row) =>
+            row.map((tile) => (tile ? tile.value : null)),
+          ),
+        };
+        localStorage.setItem("2048_game_state", JSON.stringify(saveData));
+      } catch (error) {
+        console.error("Failed to save game state:", error);
+      }
+    };
+
+    if (immediate) {
+      performSave();
+    } else {
+      this.saveDebounceTimer = window.setTimeout(
+        performSave,
+        this.SAVE_DEBOUNCE_DELAY,
+      );
+    }
+  }
+
+  public loadGameState(): boolean {
+    try {
+      const savedData = localStorage.getItem("2048_game_state");
+      if (!savedData) return false;
+
+      const data = JSON.parse(savedData);
+
+      // Validte data
+      if (
+        !data.grid ||
+        !Array.isArray(data.grid) ||
+        typeof data.score !== "number" ||
+        typeof data.movesCount !== "number"
+      ) {
+        return false;
+      }
+
+      // collect tile data
+      const grid: GameGridTileDataType[][] = data.grid.map(
+        (row: (number | null)[], rowIndex: number) =>
+          row.map((value: number | null, colIndex: number) => {
+            if (value === null) return null;
+
+            const position = { row: rowIndex, col: colIndex };
+            return {
+              value,
+              startPosition: position,
+              endPosition: position,
+              isMerged: false,
+              animationType: "none" as const,
+              id: Math.random() * 1000000, // Generate new ID
+            };
+          }),
+      );
+
+      // Restore game state
+      this.gameLogicState = {
+        grid,
+        score: data.score,
+        movesCount: data.movesCount,
+        currentGameState: data.currentGameState || "playing",
+        hasNoValidMoveInDirection: null,
+      };
+
+      return true;
+    } catch (error) {
+      console.error("Failed to load game state:", error);
+      return false;
+    }
+  }
+
+  public clearSavedGameState(): void {
+    try {
+      localStorage.removeItem("2048_game_state");
+    } catch (error) {
+      console.error("Failed to clear saved game state:", error);
+    }
   }
 
   public triggerWaveAnimation(): void {
@@ -97,6 +195,7 @@ export class GameLogicManager {
       this.checkGameState();
       // Reset the hasNoValidMoveInDirection flag
       this.gameLogicState.hasNoValidMoveInDirection = null;
+      this.saveGameState();
     }
 
     // Set the hasNoValidMoveInDirection flag to the current direction so that the input manager can block input in that direction for the next moves in same direction until the player moves in a different direction.
