@@ -43,12 +43,7 @@ export function GamePage() {
   };
 
   const handleStartNewGame = () => {
-    const response = confirm(
-      "Are you sure you want to start a new game?\nAll progress will be lost.",
-    );
-    if (response) {
-      gameManager.reset();
-    }
+    gameManager.reset();
   };
 
   return (
@@ -58,10 +53,12 @@ export function GamePage() {
           data-gameover={isGameOver()}
           class="absolute inset-x-0 flex translate-y-[-100%] transform-gpu flex-col items-center justify-center p-4 opacity-0 duration-200 will-change-[opacity] data-[gameover=true]:top-1/2 data-[gameover=true]:-translate-y-1/2 data-[gameover=true]:opacity-100"
         >
-          <span class="text-accent text-4xl font-bold">Game Over</span>
+          <span class="text-accent text-5xl font-bold md:text-4xl">
+            Game Over
+          </span>
           <p class="text-accent">
-            {gameUIState().score} points scored in {gameUIState().movesCount}{" "}
-            moves
+            <span class="font-bold">{gameUIState().score}</span> points scored
+            in <span class="font-bold">{gameUIState().movesCount}</span> moves
           </p>
         </div>
         <div
@@ -108,6 +105,15 @@ export function GamePage() {
           </button>
         </div>
       </main>
+
+      <footer class="p-3">
+        <p class="text-accent text-center text-xs">
+          Made by{" "}
+          <a target="_blank" href="https://amitchauhan.me">
+            @Amit Chauhan
+          </a>
+        </p>
+      </footer>
     </>
   );
 }
