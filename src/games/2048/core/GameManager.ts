@@ -60,6 +60,8 @@ export class GameManager {
 
   public attachGameUIStateListener(listener: (event: GameStateType) => void) {
     this.uiStateListeners.push(listener);
+    // send game state as soon as the listener is attached
+    listener(this.gameLogic.getGameLogicState());
   }
 
   private notifyUIStateListener() {
