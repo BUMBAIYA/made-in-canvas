@@ -64,6 +64,17 @@ export class GameManager {
     listener(this.gameLogic.getGameLogicState());
   }
 
+  public handleInput(event: InputEvent): void {
+    const { currentGameState } = this.gameLogic.getGameLogicState();
+    if (currentGameState !== "playing") return;
+
+    const moved = this.gameLogic.move(event.direction);
+    if (moved) {
+      this.startRenderLoop();
+      this.notifyUIStateListener();
+    }
+  }
+
   private notifyUIStateListener() {
     const gameState = this.gameLogic.getGameLogicState();
 
@@ -128,16 +139,5 @@ export class GameManager {
   private setupEventListeners(): void {
     this.inputManager.addListener(this.handleInput.bind(this));
     window.addEventListener("resize", this.handleWindowResize.bind(this));
-  }
-
-  private handleInput(event: InputEvent): void {
-    const { currentGameState } = this.gameLogic.getGameLogicState();
-    if (currentGameState !== "playing") return;
-
-    const moved = this.gameLogic.move(event.direction);
-    if (moved) {
-      this.startRenderLoop();
-      this.notifyUIStateListener();
-    }
   }
 }

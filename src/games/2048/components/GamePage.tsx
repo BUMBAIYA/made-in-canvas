@@ -1,11 +1,20 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
 import { GameManager } from "@/games/2048/core/GameManager";
+import { useSwipeable, type SwipeDirections } from "@/hooks/useSwipeable";
 import type { GameStateType } from "@/games/2048/core/types";
+import type { Direction } from "@/games/2048/core/InputManager";
 
 type GameUISate = {
   score: number;
   gameState: GameStateType["currentGameState"];
   movesCount: number;
+};
+
+const SwipeDirectionToGameDirectionMap: Record<SwipeDirections, Direction> = {
+  Down: "DOWN",
+  Left: "LEFT",
+  Right: "RIGHT",
+  Up: "UP",
 };
 
 export function GamePage() {
@@ -16,6 +25,20 @@ export function GamePage() {
     gameState: "playing",
     score: 0,
     movesCount: 0,
+  });
+
+  const { ref: swipeableRef } = useSwipeable({
+    swipeDuration: 500,
+    preventScrollOnSwipe: true,
+    trackMouse: true,
+    onSwiped: (event) => {
+      if (gameManager) {
+        gameManager.handleInput({
+          timestamp: Date.now(),
+          direction: SwipeDirectionToGameDirectionMap[event.dir],
+        });
+      }
+    },
   });
 
   onMount(() => {
@@ -90,7 +113,10 @@ export function GamePage() {
 
       <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col p-5 md:p-0">
         <div
-          ref={gameBoardContainer}
+          ref={(el) => {
+            gameBoardContainer = el;
+            swipeableRef(el);
+          }}
           class="flex w-full flex-1 items-center justify-center md:max-h-[450px]"
         />
         <div
