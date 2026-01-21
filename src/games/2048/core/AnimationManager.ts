@@ -44,11 +44,17 @@ export class AnimationManager {
     };
   }
 
-  public addAppearAnimation(tile: GameGridTileDataType): void {
+  public addAppearAnimation(
+    tile: GameGridTileDataType,
+    config?: Partial<{ delay: number }>,
+  ): void {
+    // Many cool animations can be added using this delay parameter.
+    // Refeer `GameLogicManager.ts` for examples.
+    const { delay = 0 } = config || {};
     const animation: AnimationState = {
       id: tile.id,
       type: "appear",
-      startTime: this.currentTime,
+      startTime: this.currentTime + delay,
       duration: this.config.appearDuration,
       startPosition: tile.startPosition,
       endPosition: tile.endPosition,

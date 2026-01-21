@@ -37,10 +37,16 @@ export class GameLogicManager {
       this.addRandomTile();
     }
     // Added appear animations in case the game is loaded from a saved state
-    this.gameLogicState.grid.forEach((row) => {
-      row.forEach((tile) => {
+    // This show the tiles appears from one by one from the bottom-left to the top-right. eg: (this.config.size - rowIndex - 1) * this.config.size + colIndex) * 30
+    // If I want to show the tiles appearing from the left to the right then delay should be based on the column index. eg: (colIndex * 30)
+    // If I want to show the tiles appearing from the bottom to the top then delay should be based on the row index. eg: (rowIndex * 30)
+    // This is top-left to bottom-right. eg: (rowIndex * this.config.size + colIndex) * 30
+    this.gameLogicState.grid.forEach((row, rowIndex) => {
+      row.forEach((tile, colIndex) => {
         if (tile && this.animationManager) {
-          this.animationManager.addAppearAnimation(tile);
+          this.animationManager.addAppearAnimation(tile, {
+            delay: (rowIndex * this.config.size + colIndex) * 30,
+          });
         }
       });
     });
