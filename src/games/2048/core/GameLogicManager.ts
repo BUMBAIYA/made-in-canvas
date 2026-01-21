@@ -162,8 +162,6 @@ export class GameLogicManager {
 
     const delayPerTile = 30;
 
-    this.animationManager.clearAllAnimations();
-
     for (let row = 0; row < this.gameLogicState.grid.length; row++) {
       for (let col = 0; col < this.gameLogicState.grid[row].length; col++) {
         const tile = this.gameLogicState.grid[row][col];
