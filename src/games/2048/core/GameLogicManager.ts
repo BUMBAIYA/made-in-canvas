@@ -36,6 +36,14 @@ export class GameLogicManager {
       this.addRandomTile();
       this.addRandomTile();
     }
+    // Added appear animations in case the game is loaded from a saved state
+    this.gameLogicState.grid.forEach((row) => {
+      row.forEach((tile) => {
+        if (tile && this.animationManager) {
+          this.animationManager.addAppearAnimation(tile);
+        }
+      });
+    });
     this.gameLogicState.hasNoValidMoveInDirection = null;
     this.saveGameState(true);
   }
