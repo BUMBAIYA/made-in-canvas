@@ -7,6 +7,11 @@ import type {
 import type { InputEvent } from "@/games/2048/core/InputManager";
 import type { AnimationManager } from "@/games/2048/core/AnimationManager";
 
+/**
+ * Game state storage key
+ */
+const GAME_STATE_STORAGE_KEY = "2048_game_state" as const;
+
 const DIRECTIONS = [
   { x: 0, y: -1 }, // up
   { x: 0, y: 1 }, // down
@@ -82,7 +87,7 @@ export class GameLogicManager {
             row.map((tile) => (tile ? tile.value : null)),
           ),
         };
-        localStorage.setItem("2048_game_state", JSON.stringify(saveData));
+        localStorage.setItem(GAME_STATE_STORAGE_KEY, JSON.stringify(saveData));
       } catch (error) {
         console.error("Failed to save game state:", error);
       }
@@ -100,7 +105,7 @@ export class GameLogicManager {
 
   public loadGameState(): boolean {
     try {
-      const savedData = localStorage.getItem("2048_game_state");
+      const savedData = localStorage.getItem(GAME_STATE_STORAGE_KEY);
       if (!savedData) return false;
 
       const data = JSON.parse(savedData);
@@ -151,7 +156,7 @@ export class GameLogicManager {
 
   public clearSavedGameState(): void {
     try {
-      localStorage.removeItem("2048_game_state");
+      localStorage.removeItem(GAME_STATE_STORAGE_KEY);
     } catch (error) {
       console.error("Failed to clear saved game state:", error);
     }
