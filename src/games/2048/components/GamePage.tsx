@@ -77,7 +77,7 @@ export function GamePage() {
           class="absolute inset-x-0 flex translate-y-[-100%] transform-gpu flex-col items-center justify-center p-4 opacity-0 duration-200 will-change-[opacity] data-[gameover=true]:top-1/2 data-[gameover=true]:-translate-y-1/2 data-[gameover=true]:opacity-100"
         >
           <span class="text-accent text-5xl font-bold md:text-4xl">
-            Game Over
+            {gameUIState().gameState === "game-over" ? "Game Over" : "You Won"}
           </span>
           <p class="text-accent">
             <span class="font-bold">{gameUIState().score}</span> points scored
@@ -127,7 +127,11 @@ export function GamePage() {
             onClick={handleStartNewGame}
             class="border-accent text-accent focus:ring-accent hover:bg-hover flex h-16 w-full max-w-[450px] transform-gpu cursor-pointer items-center justify-center gap-2 rounded-xl border-2 p-4 transition-transform hover:scale-105 focus:scale-105 focus:ring-2 focus:ring-offset-2"
           >
-            <span class="text-lg font-semibold">Try Again</span>
+            <span class="text-lg font-semibold">
+              {gameUIState().gameState === "game-over"
+                ? "Try Again"
+                : "New Game"}
+            </span>
           </button>
         </div>
       </main>
