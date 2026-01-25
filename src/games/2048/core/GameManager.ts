@@ -67,6 +67,9 @@ export class GameManager {
   public handleInput(event: InputEvent): void {
     const { currentGameState } = this.gameLogic.getGameLogicState();
     if (currentGameState !== "playing") return;
+    // Clear all animations to avoid running animations from previous moves
+    // Fixing weird animation glitchs when moves are spammed
+    this.animationManager.clearAllAnimations();
 
     const moved = this.gameLogic.move(event.direction);
     if (moved) {
