@@ -121,7 +121,7 @@ export function GamePage() {
         />
         <div
           data-gameover={isGameOver()}
-          class="mt-8 flex h-0 w-full translate-y-[100%] transform-gpu items-center justify-center opacity-0 transition-all duration-200 data-[gameover=true]:h-16 data-[gameover=true]:translate-y-0 data-[gameover=true]:opacity-100"
+          class="pointer-events-none mt-8 flex h-0 w-full translate-y-[100%] transform-gpu items-center justify-center opacity-0 transition-all duration-200 data-[gameover=true]:pointer-events-auto data-[gameover=true]:h-16 data-[gameover=true]:translate-y-0 data-[gameover=true]:opacity-100"
         >
           <button
             onClick={handleStartNewGame}
