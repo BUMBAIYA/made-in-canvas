@@ -1,4 +1,5 @@
 ---
+import GameLoadingScreen from "@/games/2048/components/GameLoadingScreen.astro";
 import { GamePage } from "@/games/2048/components/GamePage";
 import "@/styles/global.css";
 ---
@@ -17,6 +18,8 @@ import "@/styles/global.css";
     />
   </head>
   <body class="bg-background text-accent flex min-h-dvh flex-col">
-    <GamePage client:only="solid" />
+    <GamePage client:only="solid">
+      <GameLoadingScreen slot="fallback" />
+    </GamePage>
   </body>
 </html>
