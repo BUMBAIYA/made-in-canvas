@@ -139,8 +139,8 @@ export function GamePage() {
       <footer class="p-3">
         <p class="text-accent text-center text-xs">
           Source code{" "}
-          <a target="_blank" href="https://github.com/BUMBAIYA/canvas-games">
-            @BUMBAIYA/canvas-games
+          <a target="_blank" href="https://github.com/BUMBAIYA/made-in-canvas">
+            @BUMBAIYA/made-in-canvas
           </a>
         </p>
       </footer>
