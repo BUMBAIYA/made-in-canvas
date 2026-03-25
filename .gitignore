@@ -44,3 +44,6 @@ coverage/
 # cache directories
 .cache/
 .vite/
+
+# Agent
+.cursor/
